@@ -1,3 +1,6 @@
+import random
+import numpy as np
+
 class Network(object):
         #number_of_neurons_by_layer is a list containing number of neurons in each layer
         def __init__(self, number_of_neurons_by_layer):
@@ -11,10 +14,6 @@ class Network(object):
 
         #biases to be initialized by random number generation
 
-        #z can be a vector, and then exp will be applied on every element of vector
-        def sigmoid(z):
-            return 1.0/(1.0 + np.exp(-z))
-
         # Applies the equation activation = sigmoid(weight*activation + biases)
         def feedforward(self, a):
             """Return the output of the network if "a" is input"""
@@ -25,7 +24,6 @@ class Network(object):
         #What inputs should go here
         #This is SGD = Stochastic Gradient Descent
         #On what is it applied
-        
         def SGD(self, training_data, epochs, mini_batch_size, eta, test_data = None):
             """Training data is a list of tuples "(x,y)" representing the training inputs and desired outputs"""
             if test_data:
@@ -68,13 +66,40 @@ class Network(object):
             "nabla_b" and "nabla_w" are layer by layer lists of numpy arrays, similar
             to "self.biases" and "self.weights"."""
             nabla_b = [np.zeros(b.shape) for b in self.biases]
+            nabla_w = [np.zeros(w.shape) for w in self.weights]
 
-             
+            activation = x
+            activations = [x] # list to store all the activations, layer by layer
+            z_vectors = []
             for b,w in zip(self.biases, self.weights):
                 z = np.dot(w, activation) + b
-                zs.append(z)
+                z_vectors.append(z)
                 activation = sigmoid(z)
                 activations.append(activation)
 
+            #backward pass
+            delta = self.cost_derivative(activations[-1], y) * \
+            sigmoid_prime(z_vectors[-1])
+            nabla_b[-1] = delta
+            nabla_w[-1] = np.dot(delta, activations[-2].transpose())
+
+            for l in xrange(2, self.num_layers):
+                z = z_vectors[-l]
+                sp = sigmoid_prime(z)
+                delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
+                nabla_b[-l] = delta
+                nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
+            
+            return (nabla_b, nabla_w)
+
         def evaluate(self, test_data):
-            test_results = 
+            test_results = [(np.argmax(self.feedforward(x)), y)
+                        for (x, y) in test_data]
+            return sum(int(x == y) for (x, y) in test_results)
+
+def sigmoid(z):
+    return 1.0/(1.0+np.exp(-z))
+
+def sigmoid_prime(z):
+    """Derivative of the sigmoid function."""
+    return sigmoid(z)*(1-sigmoid(z))
