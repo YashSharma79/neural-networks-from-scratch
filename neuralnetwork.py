@@ -97,6 +97,10 @@ class Network(object):
                         for (x, y) in test_data]
             return sum(int(x == y) for (x, y) in test_results)
 
+        def cost_derivative(self, output_activations, y):
+            return (output_activations-y)
+
+
 def sigmoid(z):
     return 1.0/(1.0+np.exp(-z))
 
